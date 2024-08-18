@@ -1,5 +1,7 @@
 use anyhow::{Context, Result};
+use chrono::NaiveDate;
 use clap::Parser;
+use dialoguer::{theme::ColorfulTheme, MultiSelect};
 use rspotify::{
     model::{AlbumType, IncludeExternal, Market, SearchResult, SearchType, SimplifiedAlbum},
     prelude::*,
@@ -95,17 +97,49 @@ async fn main() {
             .unwrap();
 
         for item in album_page.items {
-            println!(
-                "{} {}",
-                item.album_type.as_ref().unwrap_or(&"".to_string()),
-                item.name
-            );
+            println!("{:?}", item.name);
             albums.push(item);
         }
 
         if album_page.next.is_none() {
             break;
         }
+    }
+
+    // TODO: add logic to sort out singles that are already included in albums
+
+    // sort albums by release date (ascending or descending depending on args)
+    albums.sort_by(|a, b| {
+        let date_a = parse_date(&a.release_date);
+        let date_b = parse_date(&b.release_date);
+
+        if args.descending {
+            date_b.cmp(&date_a)
+        } else {
+            date_a.cmp(&date_b)
+        }
+    });
+
+    for album in &albums {
+        println!(
+            "{:?} {:?} {:?}",
+            album.release_date, album.name, album.album_type
+        );
+    }
+
+    let album_choices: Vec<(String, bool)> =
+        albums.iter().map(|a| (a.name.clone(), true)).collect();
+
+    // have user select albums to include in playlist
+    let selected_albums = MultiSelect::with_theme(&ColorfulTheme::default())
+        .with_prompt("Select albums to include in playlist")
+        .items_checked(&album_choices)
+        .interact()
+        .unwrap();
+
+    println!("Selected albums:");
+    for i in selected_albums {
+        println!("{:?}", albums[i].name);
     }
 
     // create a new playlist
@@ -133,4 +167,10 @@ async fn main() {
     //     .unwrap_or_else(|err| panic!("Failed to create playlist: {:?}", err));
 
     println!("done");
+}
+
+fn parse_date(date_str: &Option<String>) -> Option<NaiveDate> {
+    date_str
+        .as_ref()
+        .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
 }
