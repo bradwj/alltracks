@@ -118,13 +118,6 @@ async fn main() {
         }
     });
 
-    for album in &albums {
-        println!(
-            "{:?} {:?} {:?}",
-            album.release_date, album.name, album.album_type
-        );
-    }
-
     let album_choices: Vec<(String, bool)> = albums
         .iter()
         .map(|a| {
