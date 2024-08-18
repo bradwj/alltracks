@@ -189,10 +189,6 @@ async fn main() {
         .map(|t| PlayableId::Track(t.id.clone().unwrap()))
         .collect();
 
-    // let playlist_result = spotify
-    //     .playlist_add_items(playlist.id, track_ids, Some(0))
-    //     .await
-    //     .unwrap_or_else(|err| panic!("Failed to add tracks to playlist: {:?}", err));
     // maximum of 100 tracks can be added at once per API request
     let mut offset = 0;
     while offset < track_ids.len() {
